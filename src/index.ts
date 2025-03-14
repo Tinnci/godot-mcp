@@ -20,8 +20,11 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import { existsSync, readdirSync, mkdirSync } from 'fs';
 import { join, dirname, basename } from 'path';
+import { fileURLToPath } from 'url';
 
 const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Interface representing a running Godot process
@@ -53,7 +56,9 @@ interface OperationParams {
 class GodotServer {
   private server: Server;
   private activeProcess: GodotProcess | null = null;
-  private godotPath: string = '/Applications/Godot.app/Contents/MacOS/Godot'; // Default for macOS
+  private godotPath: string = process.platform === 'win32' 
+    ? 'E:\\Godot_v4.4-stable_win64.exe\\Godot_v4.4-stable_win64.exe' // Windows default path
+    : '/Applications/Godot.app/Contents/MacOS/Godot'; // macOS default
   private debugMode: boolean = false;
   private operationsScriptPath: string;
 

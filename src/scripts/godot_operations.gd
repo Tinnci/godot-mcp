@@ -9,7 +9,17 @@ func _init():
     
     var operation = args[1]
     var params_json = args[2]
-    var params = JSON.parse(params_json).result
+    
+    var json = JSON.new()
+    var error = json.parse(params_json)
+    var params = null
+    
+    if error == OK:
+        params = json.get_data()
+    else:
+        printerr("Failed to parse JSON parameters: " + params_json)
+        printerr("JSON Error: " + str(error) + " at line " + str(json.get_error_line()))
+        quit(1)
     
     if not params:
         printerr("Failed to parse JSON parameters: " + params_json)
@@ -112,22 +122,22 @@ func add_node(params):
     # Create the new node
     var new_node
     
-    # Try to create the node
-    try:
-        var script = GDScript.new()
-        script.source_code = "extends SceneTree\nfunc _init():\n\treturn " + params.node_type + ".new()"
-        script.reload()
-        
-        # Try to instantiate the type
-        var instance_script = load(script.resource_path)
-        if instance_script:
-            new_node = instance_script.new()
-        else:
-            printerr("Failed to create node of type: " + params.node_type)
-            quit(1)
-    except:
+    # Create the node
+    var script = GDScript.new()
+    script.source_code = "extends SceneTree\nfunc _init():\n\treturn " + params.node_type + ".new()"
+    var script_error = script.reload()
+    if script_error != OK:
         printerr("Failed to create node of type: " + params.node_type)
-        printerr("This node type may not exist or may not be instantiable")
+        quit(1)
+        
+    var instance = script.new()
+    if not instance:
+        printerr("Failed to instantiate script for node type: " + params.node_type)
+        quit(1)
+    
+    new_node = instance._init()
+    if not new_node:
+        printerr("Failed to create node of type: " + params.node_type)
         quit(1)
     
     new_node.name = params.node_name
